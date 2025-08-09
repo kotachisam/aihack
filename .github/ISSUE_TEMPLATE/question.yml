@@ -1,0 +1,77 @@
+name: ❓ Question/Help
+description: Ask a question or get help with AI-Hack
+title: "[Question]: "
+labels: ["question", "help-wanted"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Need help with AI-Hack? We're here to help! Please provide details below.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+      placeholder: Ask your question...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: question-category
+    attributes:
+      label: Question Category
+      description: What area is your question about?
+      options:
+        - Installation/Setup
+        - Configuration
+        - Usage/Commands
+        - AI Model Integration
+        - Privacy/Security
+        - Performance
+        - Troubleshooting
+        - Best Practices
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What are you trying to accomplish?
+      placeholder: Describe what you're working on...
+
+  - type: textarea
+    id: attempted-solutions
+    attributes:
+      label: What Have You Tried?
+      description: What steps have you already taken?
+      placeholder: |
+        - Checked documentation
+        - Tried command X...
+        - Searched existing issues...
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment (if relevant)
+      description: Your setup details
+      placeholder: |
+        - OS: [e.g., macOS 14.0]
+        - Python version: [e.g., 3.11.0]
+        - AI-Hack version: [e.g., 0.1.0]
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have checked the documentation
+          required: true
+        - label: I have searched existing issues and discussions
+          required: true
+        - label: This question contains no sensitive information
+          required: true

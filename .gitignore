@@ -1,0 +1,119 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# API Keys and Secrets (CRITICAL)
+.env
+.env.*
+secrets.json
+config.json
+api_keys.txt
+.secrets/
+.credentials/
+
+# Business Strategy & IP (CRITICAL)
+.context/
+BUSINESS_STRATEGY.md
+COMPETITIVE_ANALYSIS.md
+ACCEPTED_PLAN.md
+ROADMAP_PRIVATE.md
+STRATEGY.md
+COMPETITIVE_*.md
+
+# Context Bridging IP Protection (CRITICAL)
+**/context_bridge/
+**/persistent_context/
+**/cross_model/
+context_*.py
+bridge_*.py
+**/advanced/
+**/proprietary/
+**/private/
+
+# Development and Testing
+*.log
+logs/
+temp/
+tmp/
+.temp/
+local_config.*
+dev_config.*
+test_output/
+experiments/
+research/
+CLAUDE.md
+.claude
+
+# Backup files
+*.bak
+*.backup
+*~

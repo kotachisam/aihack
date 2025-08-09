@@ -1,0 +1,97 @@
+name: 🐛 Bug Report
+description: Report a bug to help us improve AI-Hack
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below to help us fix the issue.
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Run command '...'
+        2. See error '...'
+        3. Expected '...' but got '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+      placeholder: Describe what you expected...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+      placeholder: Describe what actually happened...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ai-model
+    attributes:
+      label: AI Model
+      description: Which AI model were you using when the bug occurred?
+      options:
+        - Local (Mixtral/CodeLlama)
+        - Claude (Cloud)
+        - Gemini (Cloud)
+        - Multiple models
+        - Not applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Your environment details
+      placeholder: |
+        - OS: [e.g., macOS 14.0, Ubuntu 22.04, Windows 11]
+        - Python version: [e.g., 3.11.0]
+        - AI-Hack version: [e.g., 0.1.0]
+        - Ollama version: [e.g., 0.1.47]
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Any relevant log output or error messages
+      render: text
+      placeholder: Paste logs here...
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues to avoid duplicates
+          required: true
+        - label: I have provided all requested information
+          required: true
+        - label: This issue contains no sensitive information (API keys, secrets, etc.)
+          required: true
