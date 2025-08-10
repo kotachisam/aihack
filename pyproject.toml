@@ -89,7 +89,7 @@ warn_unreachable = true
 strict_equality = true
 
 [[tool.mypy.overrides]]
-module = ["anthropic.*", "google.generativeai.*", "textual.*"]
+module = ["anthropic.*", "google.*", "google.generativeai.*", "textual.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
