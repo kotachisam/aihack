@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import httpx
 
@@ -42,7 +42,7 @@ class OllamaModel:
             avg_response_time_ms=7000,  # Based on our testing
         )
 
-    async def generate(self, prompt: str, model: str | None = None) -> str:
+    async def generate(self, prompt: str, model: Optional[str] = None) -> str:
         """Generate response from local model"""
         if model is None:
             model = self.model_name
