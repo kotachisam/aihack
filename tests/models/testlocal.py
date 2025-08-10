@@ -72,8 +72,8 @@ async def test_ollama_generate_error_handling() -> None:
     agent = OllamaModel()
     agent.client = mock_client
 
-    response = await agent.generate("test prompt")
+    # Expect ModelError to be raised
+    with pytest.raises(Exception) as excinfo:
+        await agent.generate("test prompt")
 
-    assert isinstance(response, str)
-    assert "Error:" in response
-    assert "Local model unavailable" in response
+    assert "Network error" in str(excinfo.value)
