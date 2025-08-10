@@ -36,22 +36,51 @@ AI-Hack is the first tool designed from the ground up to solve this dilemma. It 
 
 ## 🚀 Getting Started
 
-Ready to try it? Our detailed **[GETTING_STARTED.md](GETTING_STARTED.md)** guide will have you up and running in less than 5 minutes.
+### Prerequisites
+
+**⚠️ Platform Support**: AI-Hack is currently tested on **macOS only**. Linux and Windows support is planned but not yet tested.
+
+**Poetry Installation**: AI-Hack uses Poetry for dependency management. For the best experience on macOS, install Poetry using the official installer:
+
+```bash
+# Install Poetry (recommended for macOS)
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+**macOS LibreSSL Fix**: macOS users may see urllib3 warnings due to LibreSSL compatibility. The setup script below automatically handles this.
+
+### Quick Setup
 
 ```bash
 # 1. Clone the repo
 git clone https://github.com/kotachisam/aihack.git
 cd aihack
 
-# 2. Install dependencies
+# 2. Run the setup script (handles macOS compatibility)
+./setup.sh
+
+# 3. Test your installation
+ah --help
+```
+
+### Manual Setup
+
+If you prefer manual installation:
+
+```bash
+# 1. Install dependencies
 poetry install
 
-# 3. Activate the environment
-poetry shell
+# 2. Fix macOS urllib3 warnings (if needed)
+poetry self add urllib3==1.26.15
 
-# 4. Run your first command!
-ah review examples/simple_logic.py --model local
+# 3. Test your installation
+poetry run ah --help
 ```
+
+Ready to try it? Our detailed **[GETTING_STARTED.md](GETTING_STARTED.md)** guide will have you up and running in less than 5 minutes.
+
+**Having Poetry issues?** See **[POETRY_SETUP.md](POETRY_SETUP.md)** for comprehensive troubleshooting.
 
 ## 🤝 Join the Revolution
 

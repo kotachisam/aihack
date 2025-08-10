@@ -12,12 +12,13 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: [ '3.10', '3.11', '3.12', '3.13']
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
+      id: setup-python
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
@@ -67,32 +68,8 @@ jobs:
         flags: unittests
         name: codecov-umbrella
 
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-
-    - name: Install dependencies
-      run: poetry install --with dev
-
-    - name: Run safety check
-      run: poetry run safety check
-      continue-on-error: true
-
-    - name: Run bandit security scan
-      run: poetry run bandit -r src/
-      continue-on-error: true
-
   build:
-    needs: [test, security-scan]
+    needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 

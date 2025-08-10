@@ -8,7 +8,7 @@ Welcome! We're excited you want to contribute to AI-Hack. This project thrives o
 
 ```bash
 # Fork the repo on GitHub, then clone your fork
-git clone https://github.com/YOUR_USERNAME/aihack.git
+git clone https://github.com/kotachisam/aihack.git
 cd aihack
 
 # Install development dependencies
@@ -245,8 +245,8 @@ Before submitting your contribution:
 
 Every contribution makes AI-Hack better for developers worldwide. Whether you're fixing a typo, adding a feature, or improving documentation, your work helps create better, more private development tools.
 
-**Ready to contribute?** Check out our [open issues](https://github.com/your-username/aihack/issues) or [BUILD_PLAN.md](BUILD_PLAN.md) for inspiration!
+**Ready to contribute?** Check out our [open issues](https://github.com/kotachisam/aihack/issues) or [BUILD_PLAN.md](BUILD_PLAN.md) for inspiration!
 
 ---
 
-*Questions? Open a [GitHub Discussion](https://github.com/your-username/aihack/discussions) and we'll help you get started.*
+*Questions? Open a [GitHub Discussion](https://github.com/kotachisam/aihack/discussions) and we'll help you get started.*

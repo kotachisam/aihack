@@ -34,6 +34,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+.*cache
 nosetests.xml
 coverage.xml
 *.cover
@@ -82,12 +83,21 @@ api_keys.txt
 
 # Business Strategy & IP (CRITICAL)
 .context/
+.archive/
+CODE_OF_CONDUCT.md
 BUSINESS_STRATEGY.md
 COMPETITIVE_ANALYSIS.md
 ACCEPTED_PLAN.md
 ROADMAP_PRIVATE.md
 STRATEGY.md
 COMPETITIVE_*.md
+NEXT.md
+
+# MD Processing
+screen.txt
+cleanlog.md
+mdstrip.py
+mdclean.py
 
 # Context Bridging IP Protection (CRITICAL)
 **/context_bridge/

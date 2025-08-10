@@ -1,0 +1,7 @@
+{
+  "exclude": [
+    "examples/",
+    "tests/scripts/",
+    "src/aihack/tests/scripts/"
+  ]
+}

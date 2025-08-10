@@ -9,7 +9,6 @@ packages = [
   { include = "aihack", from = "src"  }
 ]
 
-
 [tool.poetry.dependencies]
 python = "^3.11"
 click = "^8.1.0"
@@ -27,6 +26,9 @@ tree-sitter = "^0.20.0"
 watchdog = "^3.0.0"
 tomli = "^2.2.1"
 pydantic-settings = "^2.10.1"
+textual = "^5.3.0"
+pyfiglet = "^1.0.3"
+urllib3 = ">=1.26.0,<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
@@ -37,7 +39,8 @@ mypy = "^1.5.0"
 pre-commit = "^3.4.0"
 
 [tool.poetry.scripts]
-ah = "aihack.cli.main:main"
+ah = "aihack.scripts.ah_wrapper:main"
+letshack = "aihack.cli.runners.session:run"
 
 [build-system]
 requires = ["poetry-core"]
@@ -86,13 +89,15 @@ warn_unreachable = true
 strict_equality = true
 
 [[tool.mypy.overrides]]
-module = ["anthropic.*", "google.generativeai.*"]
+module = ["anthropic.*", "google.generativeai.*", "textual.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = [
     "examples.*",
     "aihack.tests.scripts.*",
+    "tests.scripts.*",
+    "tests.models.*",
     "aihack.core.click",
     "aihack.config"
 ]
@@ -106,13 +111,14 @@ disallow_untyped_decorators = false
 [tool.ruff]
 exclude = [
     "examples/",
-    "src/aihack/tests/scripts/",
+    "tests/scripts/*.py",
+    "src/aihack/tests/scripts/*.py"
 ]
 
 # pytest configuration
 [tool.pytest.ini_options]
-testpaths = ["src/aihack/tests", "tests"]
-python_files = "test*.py"
+testpaths = ["src/aihack/tests", "tests/"]
+python_files = ["test*.py", "example*.py"]
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "-v --tb=short"

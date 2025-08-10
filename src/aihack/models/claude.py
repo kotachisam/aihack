@@ -1,8 +1,8 @@
-import asyncio
 import time
 from typing import Any, Dict
 
-import anthropic
+from anthropic import APIStatusError, AsyncAnthropic
+from anthropic.types import TextBlock
 
 from ..types.common import AnalysisResult, CodeText, TaskName
 from .base import ModelCapability, ModelError, ModelMetadata, TrustLevel
@@ -12,9 +12,9 @@ class ClaudeModel:
     """Claude AI model implementation with BaseModel interface."""
 
     def __init__(self, api_key: str):
-        self.client = anthropic.Anthropic(api_key=api_key)
+        self.client = AsyncAnthropic(api_key=api_key)
         self.metadata = ModelMetadata(
-            name="claude-3-5-sonnet",
+            name="claude-3.5-sonnet",
             provider="anthropic",
             trust_level=TrustLevel.CLOUD,
             capabilities=[
@@ -31,33 +31,42 @@ class ClaudeModel:
 
     async def code_review(self, code: CodeText, task: TaskName) -> AnalysisResult:
         """Review code using Claude with cloud-optimized prompts."""
-        # Use comprehensive prompts for cloud models (they can handle nuance)
         system_prompt = self._get_cloud_system_prompt(task)
         user_prompt = self._format_user_prompt(code, task)
 
         try:
-            message = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.client.messages.create(
-                    model="claude-3-5-sonnet-20241022",
-                    max_tokens=2000,
-                    system=system_prompt,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": user_prompt,
-                        }
-                    ],
-                ),
+            message = await self.client.messages.create(
+                model="claude-3-5-sonnet-20240620",
+                max_tokens=4096,
+                system=system_prompt,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": user_prompt,
+                    }
+                ],
             )
 
-            # Handle different content block types
+            if not message.content:
+                raise ModelError(
+                    "Received empty response from Claude", self.metadata.name
+                )
+
             content_block = message.content[0]
-            if hasattr(content_block, "text"):
+            if isinstance(content_block, TextBlock):
                 return str(content_block.text)
             else:
-                return str(content_block)
+                raise ModelError(
+                    f"Received unexpected content block type: {type(content_block)}",
+                    self.metadata.name,
+                )
 
+        except APIStatusError as e:
+            raise ModelError(
+                f"Claude API status error: {e.status_code} - {e.response}",
+                self.metadata.name,
+                e,
+            )
         except Exception as e:
             raise ModelError(f"Claude API error: {str(e)}", self.metadata.name, e)
 
@@ -68,16 +77,14 @@ class ClaudeModel:
     async def is_available(self) -> bool:
         """Check if Claude API is available."""
         try:
-            # Simple health check with minimal token usage
-            await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.client.messages.create(
-                    model="claude-3-5-sonnet-20241022",
-                    max_tokens=10,
-                    messages=[{"role": "user", "content": "test"}],
-                ),
+            await self.client.messages.create(
+                model="claude-3-5-sonnet-20240620",
+                max_tokens=10,
+                messages=[{"role": "user", "content": "test"}],
             )
             return True
+        except APIStatusError:
+            return False
         except Exception:
             return False
 
@@ -86,13 +93,10 @@ class ClaudeModel:
         start_time = time.time()
 
         try:
-            await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self.client.messages.create(
-                    model="claude-3-5-sonnet-20241022",
-                    max_tokens=10,
-                    messages=[{"role": "user", "content": "health check"}],
-                ),
+            await self.client.messages.create(
+                model="claude-3-5-sonnet-20240620",
+                max_tokens=10,
+                messages=[{"role": "user", "content": "health check"}],
             )
 
             response_time = int((time.time() - start_time) * 1000)

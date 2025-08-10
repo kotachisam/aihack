@@ -1,19 +1,48 @@
 # ai_hack/cli/main.py
 import asyncio
+import os
+import warnings
 
 import click
+import pyfiglet
+from rich.align import Align
 from rich.console import Console
+from rich.panel import Panel
 
 from aihack.core.tasks import TaskRegistry
 from aihack.models.local import OllamaModel
 
+# Configure environment and warnings
+os.environ.setdefault("PYTHONWARNINGS", "ignore::UserWarning:urllib3")
+warnings.filterwarnings("ignore", message=".*urllib3.*OpenSSL.*")
+
 console = Console()
 
 
-@click.group()
-def cli() -> None:
-    """AI-Hack: Privacy-first AI development assistant"""
-    pass
+def _show_splash_screen() -> None:
+    """Displays the ASCII art splash screen."""
+    ascii_art = pyfiglet.figlet_format("AI-Hack", font="slant")
+    subtitle = "Your Privacy-First AI Coding Partner 🚀"
+    tagline = "Type [bold green]ah session[/bold green] or [bold green]letshack[/bold green] to begin."
+    message = f"[bold cyan]{ascii_art}[/bold cyan]\n[dim]{subtitle}[/dim]\n\n{tagline}"
+
+    console.print(
+        Panel(
+            Align.center(message),
+            border_style="magenta",
+            padding=(1, 2),
+            expand=True,
+        )
+    )
+
+
+@click.group(invoke_without_command=True)
+@click.help_option("-h", "--help")
+@click.pass_context
+def cli(ctx: click.Context) -> None:
+    """AI-Hack: Your Privacy-First AI Coding Partner 🚀"""
+    if ctx.invoked_subcommand is None:
+        _show_splash_screen()
 
 
 @cli.command()
@@ -157,6 +186,19 @@ def models(verbose: bool) -> None:
             console.print(
                 f"   {task:<10} - {config.get('description', 'No description')}"
             )
+
+
+@cli.command("session")
+def session() -> None:
+    """Start an interactive AI-Hack session."""
+    _show_splash_screen()
+    import time
+
+    time.sleep(1)  # Give user time to see splash screen
+    from aihack.cli.session import SessionApp
+
+    app = SessionApp()
+    app.run()
 
 
 def main() -> None:
