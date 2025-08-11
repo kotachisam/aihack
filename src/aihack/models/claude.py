@@ -74,6 +74,51 @@ class ClaudeModel:
         """Analyze code structure using Claude's comprehensive capabilities."""
         return await self.code_review(code, "analyze")
 
+    async def generate(self, prompt: str) -> str:
+        """Generate a response to a general prompt using Claude."""
+        system_prompt = (
+            "You are an AI coding assistant. Focus on software development, programming, "
+            "and technical topics. When you see 'LLM' assume it means Large Language Model, "
+            "not legal terms. Provide concise, practical responses focused on code, "
+            "development workflows, and technical problem-solving."
+        )
+
+        try:
+            message = await self.client.messages.create(
+                model="claude-3-5-sonnet-20240620",
+                max_tokens=4096,
+                system=system_prompt,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+            )
+
+            if not message.content:
+                raise ModelError(
+                    "Received empty response from Claude", self.metadata.name
+                )
+
+            content_block = message.content[0]
+            if isinstance(content_block, TextBlock):
+                return str(content_block.text)
+            else:
+                raise ModelError(
+                    f"Received unexpected content block type: {type(content_block)}",
+                    self.metadata.name,
+                )
+
+        except APIStatusError as e:
+            raise ModelError(
+                f"Claude API status error: {e.status_code} - {e.response}",
+                self.metadata.name,
+                e,
+            )
+        except Exception as e:
+            raise ModelError(f"Claude API error: {str(e)}", self.metadata.name, e)
+
     async def is_available(self) -> bool:
         """Check if Claude API is available."""
         try:

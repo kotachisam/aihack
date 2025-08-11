@@ -5,9 +5,17 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # API Keys
+    # API Keys - matching .example.env variable names
     claude_api_key: str = ""
     google_api_key: str = ""
+    openai_api_key: str = ""
+    openai_api_version: str = "2024-02-01"
+    fireworks_api_key: str = ""
+    azure_openai_api_key: str = ""
+    azure_openai_endpoint: str = ""
+    azure_openai_deployment_name: str = ""
+    azure_ai_api_key: str = ""
+    azure_ai_endpoint: str = ""
 
     # Local Model Settings
     mixtral_url: str = "http://localhost:11434"
