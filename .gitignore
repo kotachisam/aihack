@@ -103,8 +103,11 @@ mdclean.py
 **/context_bridge/
 **/persistent_context/
 **/cross_model/
+debug*.md
+AI_HACK_MULTI_MODEL_DESIGN_NOTES.md
 context_*.py
 bridge_*.py
+*context*.py
 **/advanced/
 **/proprietary/
 **/private/

@@ -13,9 +13,10 @@ class GeminiModel:
 
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-pro")
+        # Use Gemini 2.5 Flash
+        self.model = genai.GenerativeModel("gemini-2.0-flash-exp")
         self.metadata = ModelMetadata(
-            name="gemini-pro",
+            name="gemini-2.0-flash-exp",
             provider="google",
             trust_level=TrustLevel.CLOUD,
             capabilities=[
@@ -51,6 +52,28 @@ class GeminiModel:
     async def analyze_code(self, code: CodeText) -> AnalysisResult:
         """Analyze code structure using Gemini's comprehensive capabilities."""
         return await self.code_review(code, "analyze")
+
+    async def generate(self, prompt: str) -> str:
+        """Generate a response to a general prompt using Gemini."""
+        # Add coding-focused context to the prompt
+        coding_prompt = (
+            "You are a coding assistant focused on software development. "
+            "LLM means Large Language Model, not legal terms. "
+            "Provide concise, technical responses about programming and development.\n\n"
+            f"User query: {prompt}"
+        )
+
+        try:
+            # Gemini doesn't have native async, so we wrap in executor
+            response = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: self.model.generate_content(coding_prompt)
+            )
+
+            response_text: str = response.text
+            return response_text
+
+        except Exception as e:
+            raise ModelError(f"Gemini API error: {str(e)}", self.metadata.name, e)
 
     async def is_available(self) -> bool:
         """Check if Gemini API is available."""

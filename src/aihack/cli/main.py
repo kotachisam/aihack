@@ -58,6 +58,7 @@ def cli(ctx: click.Context) -> None:
 )
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose output")
 @click.option(
+    "-p",
     "--privacy",
     type=click.Choice(["high", "balanced", "performance"]),
     default="balanced",
@@ -191,10 +192,6 @@ def models(verbose: bool) -> None:
 @cli.command("session")
 def session() -> None:
     """Start an interactive AI-Hack session."""
-    _show_splash_screen()
-    import time
-
-    time.sleep(1)  # Give user time to see splash screen
     from aihack.cli.session import SessionApp
 
     app = SessionApp()
