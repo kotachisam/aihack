@@ -1,6 +1,7 @@
 """Session service for handling AI interactions in the TUI."""
 from typing import Any, Dict, List
 
+from .context import BasicCLIContextManager
 from .utils.chat_processor import ChatProcessor
 from .utils.command_utils import build_command_registry, parse_task_command
 from .utils.model_manager import ModelManager
@@ -15,14 +16,25 @@ class SessionService:
     def __init__(self) -> None:
         self.state = SessionState()
         self.model_manager = ModelManager()
+
+        # Initialize context management
+        self.context_manager = BasicCLIContextManager()
+
         self.task_processor = TaskProcessor(self.model_manager, self.state)
-        self.chat_processor = ChatProcessor(self.model_manager, self.state)
+        self.chat_processor = ChatProcessor(
+            self.model_manager, self.state, self.context_manager
+        )
         self.system_handler = SystemCommandHandler(self.model_manager, self.state)
         self.slash_commands = build_command_registry()
 
     async def initialize(self) -> Dict[str, Any]:
         """Initialize the service and ensure model availability."""
-        return await self.model_manager.initialize()
+        # Start context session
+        session_id = self.context_manager.start_session()
+
+        result = await self.model_manager.initialize()
+        result["session_id"] = session_id
+        return result
 
     async def process_chat(self, message: str) -> str:
         """Handle free-form chat with AI."""
@@ -103,3 +115,31 @@ class SessionService:
     def add_shell_command_to_context(self, command: str) -> None:
         """Add shell command to history for AI context."""
         self.state.add_shell_command_to_context(command)
+
+    def switch_model_with_context(self, new_model: str) -> Dict[str, Any]:
+        """Switch model with context optimization."""
+
+        # Switch in model manager first
+        switch_result = self.model_manager.switch_model(new_model)
+
+        # Optimize context for new model
+        optimized = self.context_manager.switch_model(new_model)
+
+        return {
+            "message": switch_result,
+            "context_optimization": {
+                "original_length": optimized.original_length,
+                "optimized_length": optimized.optimized_length,
+                "compression_ratio": f"{optimized.compression_ratio:.2f}",
+                "quality_score": f"{optimized.quality_score:.2f}",
+            },
+        }
+
+    def get_context_info(self) -> Dict[str, Any]:
+        """Get current context information."""
+        return self.context_manager.get_session_info()
+
+    def add_message_to_context(self, role: str, content: str) -> None:
+        """Add message to context for persistence."""
+        current_model = self.model_manager.get_current_model_name()
+        self.context_manager.add_message(role, content, current_model)

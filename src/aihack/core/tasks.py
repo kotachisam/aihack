@@ -8,19 +8,35 @@ from ..types.prompts import TaskType
 class TaskRegistry:
     """Central registry for task configuration and validation."""
 
+    # Task aliases mapping - maps alternative spellings to canonical task names
+    TASK_ALIASES = {
+        "analyse": "analyze",  # GB spelling
+        "optimise": "optimize",  # GB spelling
+        "colour": "color",  # GB spelling (if we add color task later)
+        "favour": "favor",  # GB spelling (if we add favor task later)
+    }
+
     @classmethod
     def get_all_task_names(cls) -> List[str]:
         """Get list of all valid task names."""
         return [task.value for task in TaskType]
 
     @classmethod
+    def resolve_task_alias(cls, task_name: str) -> str:
+        """Resolve task alias to canonical task name."""
+        task_name_lower = task_name.lower()
+        return cls.TASK_ALIASES.get(task_name_lower, task_name_lower)
+
+    @classmethod
     def is_valid_task(cls, task_name: str) -> bool:
-        """Check if task name is valid."""
-        return task_name.lower() in cls.get_all_task_names()
+        """Check if task name is valid (including aliases)."""
+        resolved_task = cls.resolve_task_alias(task_name)
+        return resolved_task in cls.get_all_task_names()
 
     @classmethod
     def get_task_config(cls, task_name: str) -> Dict[str, Any]:
-        """Get configuration for a specific task."""
+        """Get configuration for a specific task (resolves aliases)."""
+        resolved_task = cls.resolve_task_alias(task_name)
         configs = {
             TaskType.ANALYZE.value: {
                 "description": "Analyze code structure and organization",
@@ -55,7 +71,7 @@ class TaskRegistry:
         }
 
         return configs.get(
-            task_name,
+            resolved_task,
             {
                 "description": "Unknown task",
                 "prompt_style": "structured",

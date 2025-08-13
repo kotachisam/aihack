@@ -17,7 +17,7 @@ from .utils.command_utils import (
     get_slash_command_suggestions,
     parse_task_command,
 )
-from .utils.file_utils import (
+from .utils.fs.file_utils import (
     format_file_content,
     get_file_suggestions,
     resolve_file_path,

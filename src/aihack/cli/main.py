@@ -192,10 +192,9 @@ def models(verbose: bool) -> None:
 @cli.command("session")
 def session() -> None:
     """Start an interactive AI-Hack session."""
-    from aihack.cli.session import SessionApp
+    from aihack.cli.runners.session import run
 
-    app = SessionApp()
-    app.run()
+    run()  # Use same entry point as letshack
 
 
 def main() -> None:

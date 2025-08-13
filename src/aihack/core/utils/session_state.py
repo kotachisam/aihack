@@ -52,6 +52,6 @@ class SessionState:
             return self.recent_files[:8]
 
         # Import here to avoid circular imports
-        from .file_utils import get_all_file_suggestions
+        from .fs.file_utils import get_all_file_suggestions
 
         return get_all_file_suggestions()[:12]

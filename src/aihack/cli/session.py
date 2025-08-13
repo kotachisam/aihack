@@ -1,6 +1,6 @@
 """Interactive session mode for AI-Hack."""
 import asyncio
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, VerticalScroll
@@ -8,7 +8,9 @@ from textual.events import Click, Key
 from textual.widgets import Header, Input, Label, ListItem, ListView, Static
 
 from ..core.session_service import SessionService
-from ..core.utils.file_utils import get_file_suggestions
+from ..core.utils.fs.file_completion import FileCompletionEngine, FileCompletionState
+from ..core.utils.fs.file_utils import get_file_suggestions
+from ..core.utils.fs.smart_completion import AdvancedFileCompletion
 
 
 class StreamingText(Static):
@@ -93,6 +95,7 @@ class SessionApp(App):
         ("ctrl+c", "cancel_or_quit", "Cancel/Quit"),
         ("escape", "cancel_or_quit", "Cancel/Quit"),
         ("ctrl+r", "toggle_detail_mode", "Toggle Detail Mode"),
+        ("ctrl+m", "cycle_model", "Cycle AI Model"),
     ]
 
     def __init__(self) -> None:
@@ -120,6 +123,17 @@ class SessionApp(App):
             asyncio.Task[str]
         ] = None  # Track current AI task for cancellation
 
+        # Enhanced file completion
+        self.completion_engine = FileCompletionEngine()
+        self.advanced_completion = AdvancedFileCompletion()
+        self.completion_state: Optional[FileCompletionState] = None
+        self.completion_initialized = False
+
+        # Performance optimizations
+        self._last_completion_text = ""
+        self._completion_cache: Dict[str, List] = {}
+        self._last_completion_time = 0.0
+
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header()
@@ -143,6 +157,19 @@ class SessionApp(App):
         log.mount(Static(status["message"], classes="system-message"))
         if not status["available"] and "suggestion" in status:
             log.mount(Static(status["suggestion"], classes="system-message"))
+
+        # Initialize enhanced file completion
+        try:
+            await self.completion_engine.initialize()
+            await self.advanced_completion.initialize()
+            self.completion_initialized = True
+        except Exception as e:
+            log.mount(
+                Static(
+                    f"⚠️ File completion init warning: {str(e)}",
+                    classes="system-message",
+                )
+            )
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         """Handle user command input."""
@@ -255,13 +282,18 @@ class SessionApp(App):
             if event.input and event.input.cursor_position == len(current_value):
                 self.history_index = -1
 
-        # Handle different types of suggestions based on prefix
-        if current_value.startswith("/"):
+        # Handle different types of suggestions - check for @ anywhere in input first
+        cursor_pos = getattr(input_widget, "cursor_position", len(current_value))
+
+        # Enhanced @ detection - check anywhere in input
+        if "@" in current_value and self.completion_initialized:
+            await self._handle_enhanced_file_completion(current_value, cursor_pos)
+        elif current_value.startswith("/"):
             # Slash command suggestions
             command_part = current_value[1:]  # Remove the /
             await self._show_slash_suggestions(command_part)
         elif current_value.startswith("@"):
-            # File mention suggestions
+            # Fallback to basic file mention suggestions for backward compatibility
             if len(current_value) > 1:
                 await self._show_file_suggestions(current_value)
             else:
@@ -327,8 +359,113 @@ class SessionApp(App):
             status_banner.set_class(False, "command-mode")
             status_banner.set_class(False, "memory-mode")
 
+    async def _handle_enhanced_file_completion(
+        self, current_value: str, cursor_pos: int
+    ) -> None:
+        """Handle enhanced file completion with mid-prompt @ detection."""
+        try:
+            # Performance optimization: avoid repeated processing
+            current_time = asyncio.get_event_loop().time()
+            if (
+                current_value == self._last_completion_text
+                and current_time - self._last_completion_time < 0.1
+            ):
+                return
+
+            self._last_completion_text = current_value
+            self._last_completion_time = current_time
+
+            # Parse input for file mentions
+            self.completion_state = self.completion_engine.parse_input(
+                current_value, cursor_pos
+            )
+
+            # If there's an active mention at cursor, show suggestions
+            if self.completion_state.active_mention:
+                mention = self.completion_state.active_mention
+
+                # Check cache first
+                cache_key = f"{mention.file_ref}:{mention.completion_type.value}"
+                if cache_key in self._completion_cache:
+                    suggestions = self._completion_cache[cache_key]
+                else:
+                    # Get suggestions using advanced completion
+                    suggestions = await self.advanced_completion.get_smart_suggestions(
+                        mention.file_ref, limit=8
+                    )
+                    # Cache for 5 seconds
+                    self._completion_cache[cache_key] = suggestions
+                    # Simple cache cleanup - keep only last 20 entries
+                    if len(self._completion_cache) > 20:
+                        oldest_key = next(iter(self._completion_cache))
+                        del self._completion_cache[oldest_key]
+
+                if suggestions:
+                    # Update completion context
+                    await self.completion_engine.update_completion_context(
+                        self.completion_state, mention
+                    )
+
+                    # Show enhanced suggestions
+                    await self._show_enhanced_file_suggestions(suggestions, mention)
+                else:
+                    # Fallback to basic suggestions
+                    await self._show_file_suggestions(current_value)
+            else:
+                # No active mention, hide suggestions
+                if self.suggestions_visible:
+                    await self._hide_suggestions()
+
+        except Exception:
+            # Fallback to basic file suggestions on any error
+            if current_value.startswith("@"):
+                await self._show_file_suggestions(current_value)
+
+    async def _show_enhanced_file_suggestions(
+        self, suggestions: List[Dict[str, Any]], mention: Any
+    ) -> None:
+        """Show enhanced file suggestions with smart formatting."""
+        if not suggestions:
+            return
+
+        suggestions_list = self.query_one("#suggestions-list", ListView)
+        suggestions_list.clear()
+
+        # Add category header
+        suggestions_list.append(
+            ListItem(Label("─── Smart File Suggestions ───"), classes="category-header")
+        )
+
+        # Add suggestions with enhanced formatting
+        display_suggestions = []
+        for suggestion in suggestions:
+            path = suggestion["path"]
+            icon = suggestion["icon"]
+            suggestion_type = suggestion.get("suggestion_type", "match")
+
+            # Create display text with context
+            if suggestion_type == "directory_mapped":
+                display_text = f"{icon} {path}"
+            elif suggestion_type == "exact_match":
+                display_text = f"{icon} {path}"
+            else:
+                display_text = f"{icon} {path}"
+
+            suggestions_list.append(ListItem(Label(display_text)))
+            display_suggestions.append(path)
+
+        # Update state
+        self.current_suggestions = display_suggestions
+        self.current_suggestion_type = "enhanced_files"
+        self.selected_suggestion_index = 0
+
+        # Show suggestions
+        suggestions_list.set_class(False, "hidden")
+        self.suggestions_visible = True
+        await self._update_suggestion_highlight()
+
     async def _show_file_suggestions(self, current_value: str) -> None:
-        """Show file suggestions based on current input."""
+        """Show basic file suggestions (fallback method)."""
         # Extract the partial file reference after @
         parts = current_value.split("@")
         if len(parts) > 1:  # Make sure there's at least one @ character
@@ -347,6 +484,13 @@ class SessionApp(App):
                 if suggestions:
                     suggestions_list = self.query_one("#suggestions-list", ListView)
                     suggestions_list.clear()
+
+                    # Add header to distinguish from enhanced suggestions
+                    suggestions_list.append(
+                        ListItem(
+                            Label("─── File Suggestions ───"), classes="category-header"
+                        )
+                    )
 
                     for suggestion in suggestions[:8]:  # Limit to 8 suggestions
                         icon = "📁" if suggestion.endswith("/") else "📄"
@@ -517,6 +661,78 @@ class SessionApp(App):
                     ) * suggestions_list.max_scroll_y
                     suggestions_list.scroll_y = scroll_position
 
+    async def _handle_tab_completion(self) -> None:
+        """Handle tab completion by completing with the selected suggestion."""
+        await self._complete_with_selected_suggestion()
+        # Check if we should continue showing suggestions (for directories)
+        await self._maybe_continue_suggestions()
+
+    async def _handle_enhanced_tab_completion(self) -> None:
+        """Handle enhanced tab completion with path segment expansion."""
+        try:
+            if not self.completion_state or not self.completion_state.active_mention:
+                await self._complete_with_selected_suggestion()
+                return
+
+            mention = self.completion_state.active_mention
+            context = self.completion_state.completion_contexts.get(mention.start_pos)
+
+            if not context:
+                await self._complete_with_selected_suggestion()
+                return
+
+            selected_suggestion = self.current_suggestions[
+                self.selected_suggestion_index
+            ]
+
+            # Check if this is a directory that should be expanded
+            if selected_suggestion.endswith("/") or "/" in selected_suggestion:
+                # Use path segment expansion
+                expanded = self.advanced_completion.path_expander.expand_next_segment(
+                    self.advanced_completion.path_expander.create_expansion_state(
+                        mention.file_ref
+                    )
+                )
+
+                if expanded and self.completion_state:
+                    # Apply expansion
+                    input_widget = self.query_one("#command-input", Input)
+                    new_text = self.completion_engine.apply_completion(
+                        self.completion_state, context, expanded
+                    )
+                    input_widget.value = new_text
+
+                    # Update cursor position
+                    new_cursor_pos = mention.start_pos + 1 + len(expanded)
+                    input_widget.cursor_position = new_cursor_pos
+
+                    # Continue showing suggestions for further expansion
+                    await self._maybe_continue_suggestions()
+                    return
+
+            # Fallback to regular completion
+            await self._complete_with_selected_suggestion()
+
+        except Exception:
+            # Fallback on any error
+            await self._complete_with_selected_suggestion()
+
+    async def _maybe_continue_suggestions(self) -> None:
+        """Continue showing suggestions if appropriate for further expansion."""
+        try:
+            input_widget = self.query_one("#command-input", Input)
+            current_value = input_widget.value
+            cursor_pos = getattr(input_widget, "cursor_position", len(current_value))
+
+            # Re-parse input to see if we should continue
+            if "@" in current_value and self.completion_initialized:
+                # Small delay to let input settle
+                await asyncio.sleep(0.01)
+                await self._handle_enhanced_file_completion(current_value, cursor_pos)
+        except Exception:
+            # If anything goes wrong, just hide suggestions
+            await self._hide_suggestions()
+
     async def _complete_with_selected_suggestion(self) -> None:
         """Complete input with the selected suggestion."""
         if not self.current_suggestions or self.selected_suggestion_index >= len(
@@ -531,12 +747,36 @@ class SessionApp(App):
         if self.current_suggestion_type == "slash":
             # Replace /partial with /command
             input_widget.value = f"/{selected_suggestion} "
-        elif self.current_suggestion_type == "files":
-            # Replace @partial with @filename
+        elif self.current_suggestion_type in ["files", "enhanced_files"]:
+            # Replace @partial with @filename - handle both basic and enhanced
+            if (
+                self.current_suggestion_type == "enhanced_files"
+                and self.completion_state
+                and self.completion_state.active_mention
+            ):
+                # Enhanced completion
+                mention = self.completion_state.active_mention
+                context = self.completion_state.completion_contexts.get(
+                    mention.start_pos
+                )
+                if context:
+                    new_text = self.completion_engine.apply_completion(
+                        self.completion_state, context, selected_suggestion
+                    )
+                    input_widget.value = new_text + (
+                        " " if not selected_suggestion.endswith("/") else ""
+                    )
+                    return
+
+            # Fallback to basic completion
             parts = current_value.split("@")
             if len(parts) > 1:
                 base_part = "@".join(parts[:-1]) + "@"
-                input_widget.value = base_part + selected_suggestion + " "
+                input_widget.value = (
+                    base_part
+                    + selected_suggestion
+                    + (" " if not selected_suggestion.endswith("/") else "")
+                )
             else:
                 input_widget.value = f"@{selected_suggestion} "
         elif self.current_suggestion_type == "bash":
@@ -577,8 +817,13 @@ class SessionApp(App):
                     self.selected_suggestion_index += 1
                     await self._update_suggestion_highlight()
                 event.prevent_default()
-            elif event.key == "tab" or event.key == "enter":
-                # Auto-complete with selected suggestion
+            elif event.key == "tab":
+                # Enhanced tab completion with path expansion
+                if self.current_suggestions:
+                    await self._handle_tab_completion()
+                    event.prevent_default()
+            elif event.key == "enter":
+                # Complete and accept (hide suggestions)
                 if self.current_suggestions:
                     await self._complete_with_selected_suggestion()
                     await self._hide_suggestions()
@@ -643,6 +888,39 @@ class SessionApp(App):
         log = self.query_one("#content-log")
         mode_text = "Detailed" if self.detail_mode else "Summary"
         log.mount(Static(f"🔄 File content mode: {mode_text}", classes="system-message"))
+        log.scroll_end()
+
+    async def action_cycle_model(self) -> None:
+        """Cycle through available AI models with context optimization."""
+        current_model = self.service.get_current_model_name()
+
+        # Define model cycle order
+        models = ["local", "claude", "gemini"]
+        try:
+            current_index = models.index(current_model)
+            next_index = (current_index + 1) % len(models)
+            next_model = models[next_index]
+        except ValueError:
+            next_model = "local"  # Default fallback
+
+        # Switch model with context optimization
+        result = self.service.switch_model_with_context(next_model)
+
+        # Show feedback with optimization stats
+        log = self.query_one("#content-log")
+
+        # Basic switch message
+        log.mount(Static(result["message"], classes="system-message"))
+
+        # Context optimization stats
+        opt_stats = result["context_optimization"]
+        if opt_stats["original_length"] > 0:
+            stats_msg = (
+                f"📊 Context optimized: {opt_stats['compression_ratio']}x compression, "
+                f"{opt_stats['quality_score']} quality score"
+            )
+            log.mount(Static(stats_msg, classes="system-message"))
+
         log.scroll_end()
 
     async def action_quit(self) -> None:
