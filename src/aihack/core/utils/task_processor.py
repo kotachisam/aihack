@@ -4,7 +4,7 @@ from typing import Any
 
 from ..tasks import TaskRegistry
 from .command_utils import extract_file_mentions
-from .file_utils import get_file_suggestions, resolve_file_path
+from .fs.file_utils import get_file_suggestions, resolve_file_path
 from .session_state import SessionState
 
 

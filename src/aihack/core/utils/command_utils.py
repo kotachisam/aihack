@@ -12,7 +12,7 @@ def parse_task_command(command: str) -> Tuple[str, str]:
         command: Full command string starting with '/'
 
     Returns:
-        Tuple of (task_name, rest_of_command)
+        Tuple of (resolved_task_name, rest_of_command)
     """
     # Parse command - keep the original command for @ file processing
     parts = command[1:].split(None, 1)  # Split into task and rest
@@ -20,9 +20,11 @@ def parse_task_command(command: str) -> Tuple[str, str]:
         return "", ""
 
     task = parts[0].lower()
+    # Resolve task aliases (e.g., "analyse" -> "analyze")
+    resolved_task = TaskRegistry.resolve_task_alias(task)
     rest_of_command = parts[1] if len(parts) > 1 else ""
 
-    return task, rest_of_command
+    return resolved_task, rest_of_command
 
 
 def extract_file_mentions(message: str) -> List[str]:
@@ -88,6 +90,15 @@ def build_command_registry() -> Dict[str, Dict[str, str]]:
             "description": f"{config['description']} @file",
             "category": "AI Tasks",
         }
+
+    # Add task aliases to command registry for suggestions
+    for alias, canonical in TaskRegistry.TASK_ALIASES.items():
+        if canonical in TaskRegistry.get_all_task_names():
+            config = TaskRegistry.get_task_config(canonical)
+            commands[alias] = {
+                "description": f"{config['description']} @file (alias for /{canonical})",
+                "category": "AI Tasks",
+            }
 
     return commands
 

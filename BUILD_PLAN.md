@@ -25,7 +25,7 @@ ah compare --models=local,claude file.py  # Side-by-side analysis
 
 ## 🌟 **Phase 1: Community MVP** (Months 1-2)
 
-### *"Make AI-Hack indispensable for daily development"*
+### *"Make AI-Hack a go-to tool for daily development"*
 
 ### 🎪 **Interactive Terminal Experience**
 

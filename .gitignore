@@ -87,8 +87,10 @@ api_keys.txt
 CODE_OF_CONDUCT.md
 BUSINESS_STRATEGY.md
 COMPETITIVE_ANALYSIS.md
+AI_HACK_MULTI_MODEL_DESIGN_NOTES.md
+REALISTIC_ROADMAP.md
 ACCEPTED_PLAN.md
-ROADMAP_PRIVATE.md
+*ROADMAP*.md
 STRATEGY.md
 COMPETITIVE_*.md
 NEXT.md
@@ -104,13 +106,18 @@ mdclean.py
 **/persistent_context/
 **/cross_model/
 debug*.md
-AI_HACK_MULTI_MODEL_DESIGN_NOTES.md
-context_*.py
 bridge_*.py
-*context*.py
+*context*.md
+*CONTEXT*.md
+*reality*.md
 **/advanced/
 **/proprietary/
 **/private/
+
+# AI Hack Pro (CRITICAL)
+*/aihack_pro/*
+*/aihack_pro/
+aihack_pro/
 
 # Development and Testing
 *.log

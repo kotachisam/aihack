@@ -3,16 +3,19 @@ import os
 from typing import Any
 
 from .command_utils import extract_file_mentions
-from .file_utils import format_file_content, get_file_suggestions, resolve_file_path
+from .fs.file_utils import format_file_content, get_file_suggestions, resolve_file_path
 from .session_state import SessionState
 
 
 class ChatProcessor:
     """Processes chat messages with file mentions and AI coordination."""
 
-    def __init__(self, model_manager: Any, state: SessionState) -> None:
+    def __init__(
+        self, model_manager: Any, state: SessionState, context_manager: Any = None
+    ) -> None:
         self.model_manager = model_manager
         self.state = state
+        self.context_manager = context_manager
 
     async def process_file_mention(self, message: str) -> str:
         """Handle @ file mentions in messages with smart file resolution."""
@@ -85,8 +88,18 @@ class ChatProcessor:
         if not self.model_manager.is_model_available():
             return "❌ AI not available. Please start Ollama: ollama serve\n"
 
+        # Add user message to context
+        if self.context_manager:
+            self.context_manager.add_message("user", message)
+
         try:
             response = await self.model_manager.current_model.generate(message)
+
+            # Add AI response to context
+            if self.context_manager:
+                current_model = self.model_manager.get_current_model_name()
+                self.context_manager.add_message("assistant", response, current_model)
+
             return f"{response}\n"
         except Exception as e:
             return f"❌ Error: {str(e)}\n"
